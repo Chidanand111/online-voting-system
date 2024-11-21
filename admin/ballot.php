@@ -1,0 +1,123 @@
+<?php include 'includes/session.php'; ?>
+<?php include 'includes/header.php'; ?>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+
+  <?php include 'includes/navbar.php'; ?>
+  <?php include 'includes/menubar.php'; ?>
+
+  <!-- Content Wrapper. Contains page content -->
+  <div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <section class="content-header">
+      <h1>Ballot Preview</h1>
+      <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li>
+        <li class="active">Ballot Preview</li>
+      </ol>
+    </section>
+
+    <!-- Main content -->
+    <section class="content">
+      <?php
+        if(isset($_SESSION['error'])){
+          echo "
+            <div class='alert alert-danger alert-dismissible'>
+              <button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>
+              <h4><i class='icon fa fa-warning'></i> Error!</h4>
+              ".$_SESSION['error']."
+            </div>
+          ";
+          unset($_SESSION['error']);
+        }
+        if(isset($_SESSION['success'])){
+          echo "
+            <div class='alert alert-success alert-dismissible'>
+              <button type='button' class='close' data-dismiss='alert' aria-hidden='true'>&times;</button>
+              <h4><i class='icon fa fa-check'></i> Success!</h4>
+              ".$_SESSION['success']."
+            </div>
+          ";
+          unset($_SESSION['success']);
+        }
+      ?>
+
+      <div class="row">
+        <div class="col-xs-10 col-xs-offset-1" id="content"></div>
+      </div>
+      
+    </section>
+  </div>
+
+  <?php include 'includes/footer.php'; ?>
+</div>
+
+<?php include 'includes/scripts.php'; ?>
+<script>
+$(function(){
+  fetchBallot();
+
+  // Reset the selected candidates for a position
+  $(document).on('click', '.reset', function(e){
+    e.preventDefault();
+    var desc = $(this).data('desc');
+    $('.' + desc).iCheck('uncheck');
+  });
+
+  // Move position up in the ballot
+  $(document).on('click', '.moveup', function(e){
+    e.preventDefault();
+    var id = $(this).data('id');
+    $.ajax({
+      type: 'POST',
+      url: 'ballot_up.php',
+      data: {id: id},
+      dataType: 'json',
+      success: function(response){
+        if(!response.error){
+          fetchBallot();
+        }
+      }
+    });
+  });
+
+  // Move position down in the ballot
+  $(document).on('click', '.movedown', function(e){
+    e.preventDefault();
+    var id = $(this).data('id');
+    $.ajax({
+      type: 'POST',
+      url: 'ballot_down.php',
+      data: {id: id},
+      dataType: 'json',
+      success: function(response){
+        if(!response.error){
+          fetchBallot();
+        }
+      }
+    });
+  });
+});
+
+// Fetch the ballot content
+function fetchBallot(){
+  $.ajax({
+    type: 'POST',
+    url: 'ballot_fetch.php',
+    dataType: 'json',
+    success: function(response){
+      $('#content').html(response.html);
+      // Initialize iCheck for checkboxes and radio inputs
+      $('#content input').iCheck({
+        checkboxClass: 'icheckbox_flat-green',
+        radioClass: 'iradio_flat-green'
+      });
+    },
+    error: function(){
+      $('#content').html("<p class='text-center'>Unable to load ballot data. Please try again later.</p>");
+    }
+  });
+}
+</script>
+</body>
+</html>
